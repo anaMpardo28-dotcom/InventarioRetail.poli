@@ -5,7 +5,8 @@ import java.io.IOException;
 import java.util.Random;
 
 /**
- * Debe generar el archivo de productos para el proyecto.
+ * Genera los archivos de productos, vendedores y ventas
+ * utilizados como entrada para el proyecto.
  *
  * @author G3 - Los Java
  * @version 1.0
@@ -31,7 +32,7 @@ public class GenerateInfoFiles {
     };
 
     /**
-     * Iniciar la ejecución del programa.
+     * Inicia la generación de todos los archivos de entrada.
      *
      * @param args argumentos no utilizados
      */
@@ -39,20 +40,24 @@ public class GenerateInfoFiles {
         try {
             createProductsFile(10);
 
+            GenerateVendedoresFile.createSalesManInfoFile(5);
+
+            GenerateVentasFile.createSalesMenFile(4);
+
             System.out.println(
-                    "El archivo de productos se genero correctamente."
+                    "Todos los archivos fueron generados correctamente."
             );
 
         } catch (IOException excepcion) {
             System.err.println(
-                    "Ocurrio un error: "
+                    "Ocurrio un error al generar los archivos: "
                             + excepcion.getMessage()
             );
         }
     }
 
     /**
-     * Debe crear un archivo con productos pseudoaleatorios.
+     * Crea un archivo con productos pseudoaleatorios.
      *
      * @param cantidadProductos cantidad de productos que se generarán
      * @throws IOException si ocurre un error al crear el archivo
