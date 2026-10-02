@@ -9,7 +9,7 @@ import java.util.Random;
  * utilizados como entrada para el proyecto.
  *
  * @author G3 - Los Java
- * @version 1.0
+ * @version 2.0
  */
 public class GenerateInfoFiles {
 
@@ -42,7 +42,7 @@ public class GenerateInfoFiles {
 
             GenerateVendedoresFile.createSalesManInfoFile(5);
 
-            GenerateVentasFile.createSalesMenFile(4);
+            GenerateVentasFile.generarVentasDeTodos(4);
 
             System.out.println(
                     "Todos los archivos fueron generados correctamente."
@@ -95,38 +95,37 @@ public class GenerateInfoFiles {
                         CARPETA_ENTRADA + "/productos.csv"
                 );
 
-        BufferedWriter escritor =
-                new BufferedWriter(
-                        new FileWriter(archivoProductos)
-                );
-
         Random aleatorio =
                 new Random();
 
-        for (int posicion = 0;
-             posicion < cantidadProductos;
-             posicion++) {
+        try (BufferedWriter escritor =
+                     new BufferedWriter(
+                             new FileWriter(archivoProductos)
+                     )) {
 
-            String idProducto =
-                    String.format(
-                            "P%03d",
-                            posicion + 1
-                    );
+            for (int posicion = 0;
+                 posicion < cantidadProductos;
+                 posicion++) {
 
-            long precioUnitario =
-                    (aleatorio.nextInt(36) + 5) * 5000L;
+                String idProducto =
+                        String.format(
+                                "P%03d",
+                                posicion + 1
+                        );
 
-            escritor.write(
-                    idProducto
-                            + ";"
-                            + NOMBRES_PRODUCTOS[posicion]
-                            + ";"
-                            + precioUnitario
-            );
+                long precioUnitario =
+                        (aleatorio.nextInt(36) + 5) * 5000L;
 
-            escritor.newLine();
+                escritor.write(
+                        idProducto
+                                + ";"
+                                + NOMBRES_PRODUCTOS[posicion]
+                                + ";"
+                                + precioUnitario
+                );
+
+                escritor.newLine();
+            }
         }
-
-        escritor.close();
     }
 }
