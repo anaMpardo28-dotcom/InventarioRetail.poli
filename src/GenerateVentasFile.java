@@ -4,155 +4,210 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
- * Debe generar el archivo Ventas.csv para el proyecto, reutilizando
- * los vendedores que ya existen en Vendedores.csv.
+ * Genera un archivo de ventas por cada vendedor registrado.
  *
  * @author G3 - Los Java
- * @version 1.0
+ * @version 1.1
  */
 public class GenerateVentasFile {
 
-    private static final String CARPETA_ENTRADA =
-            "datos/entrada";
-
-    private static final int CANTIDAD_PRODUCTOS_DISPONIBLES = 10;
+    private static final String CARPETA_ENTRADA = "datos/entrada";
 
     /**
-     * Iniciar la ejecución del programa.
+     * Lee los vendedores y genera un archivo de ventas para cada uno.
      *
-     * @param args argumentos no utilizados
+     * @param cantidadMaximaVentas máximo de ventas por vendedor
+     * @throws IOException si ocurre un error al leer o escribir archivos
      */
-    public static void main(String[] args) {
-        try {
-            createSalesMenFile(4);
+    public static void createSalesMenFile(
+            int cantidadMaximaVentas
+    ) throws IOException {
 
-            System.out.println(
-                    "El archivo de ventas se genero correctamente."
+        if (cantidadMaximaVentas <= 0) {
+            throw new IllegalArgumentException(
+                    "La cantidad máxima de ventas debe ser mayor que cero."
             );
+        }
 
-        } catch (IOException excepcion) {
-            System.err.println(
-                    "Ocurrio un error: "
-                            + excepcion.getMessage()
-            );
+        File archivoVendedores =
+                new File(CARPETA_ENTRADA, "Vendedores.csv");
+
+        try (BufferedReader lector =
+                     new BufferedReader(new FileReader(archivoVendedores))) {
+
+            String linea;
+
+            while ((linea = lector.readLine()) != null) {
+
+                if (linea.isBlank()) {
+                    continue;
+                }
+
+                String[] datos = linea.split(";");
+
+                if (datos.length != 4) {
+                    throw new IOException(
+                            "Registro de vendedor inválido: " + linea
+                    );
+                }
+
+                long documento = Long.parseLong(datos[1]);
+                String nombre = datos[2] + " " + datos[3];
+
+                int cantidadVentas =
+                        new Random().nextInt(cantidadMaximaVentas) + 1;
+
+                createSalesMenFile(
+                        cantidadVentas,
+                        nombre,
+                        documento
+                );
+            }
         }
     }
 
     /**
-     * Debe crear el archivo Ventas.csv con una línea por cada
-     * vendedor que exista en Vendedores.csv. Cada línea inicia con
-     * el tipo y número de documento del vendedor (leídos desde ese
-     * archivo) y luego una cantidad variable de pares
-     * IdProducto;CantidadVendida. Formato de cada línea:
-     * TipoDocumento;NumeroDocumento;IdProducto;Cantidad;IdProducto;Cantidad;...
+     * Genera las ventas de un vendedor.
      *
-     * @param cantidadMaximaProductosPorVenta cantidad máxima de pares
-     *                                        producto/cantidad que
-     *                                        puede tener cada vendedor
-     * @throws IOException si ocurre un error al leer Vendedores.csv,
-     *                      si ese archivo no existe todavia, o si
-     *                      ocurre un error al crear Ventas.csv
+     * La primera línea contiene TipoDocumento;NumeroDocumento.
+     * Las siguientes contienen IdProducto;CantidadVendida.
+     *
+     * @param randomSalesCount cantidad de ventas aleatorias que se generarán
+     * @param name nombre completo del vendedor
+     * @param id número de documento del vendedor
+     * @throws IOException si ocurre un error al leer o escribir archivos
      */
     public static void createSalesMenFile(
-            int cantidadMaximaProductosPorVenta
+            int randomSalesCount,
+            String name,
+            long id
     ) throws IOException {
 
-        if (cantidadMaximaProductosPorVenta <= 0) {
-
-            System.out.println(
-                    "La cantidad de productos por venta no es valida."
+        if (randomSalesCount <= 0) {
+            throw new IllegalArgumentException(
+                    "La cantidad de ventas debe ser mayor que cero."
             );
-
-            return;
         }
 
-        File archivoVendedores =
-                new File(
-                        CARPETA_ENTRADA + "/Vendedores.csv"
-                );
-
-        if (!archivoVendedores.exists()) {
-
-            System.out.println(
-                    "Debe generar primero el archivo Vendedores.csv."
-            );
-
-            return;
-        }
-
-        BufferedReader lector =
-                new BufferedReader(
-                        new FileReader(archivoVendedores)
-                );
+        String tipoDocumento = buscarTipoDocumento(name, id);
+        List<String> productos = leerProductos();
 
         File archivoVentas =
-                new File(
-                        CARPETA_ENTRADA + "/Ventas.csv"
-                );
+                new File(CARPETA_ENTRADA, "ventas_" + id + ".csv");
 
-        BufferedWriter escritor =
-                new BufferedWriter(
-                        new FileWriter(archivoVentas)
-                );
+        Random aleatorio = new Random();
 
-        Random aleatorio =
-                new Random();
+        try (BufferedWriter escritor =
+                     new BufferedWriter(new FileWriter(archivoVentas))) {
 
-        String lineaVendedor;
+            escritor.write(tipoDocumento + ";" + id);
+            escritor.newLine();
 
-        while ((lineaVendedor = lector.readLine()) != null) {
-
-            if (lineaVendedor.isBlank()) {
-                continue;
-            }
-
-            String[] datosVendedor =
-                    lineaVendedor.split(";");
-
-            String tipoDocumento = datosVendedor[0];
-            String numeroDocumento = datosVendedor[1];
-
-            StringBuilder lineaVenta =
-                    new StringBuilder();
-
-            lineaVenta.append(tipoDocumento);
-            lineaVenta.append(";");
-            lineaVenta.append(numeroDocumento);
-
-            int cantidadProductosVendidos =
-                    aleatorio.nextInt(
-                            cantidadMaximaProductosPorVenta
-                    ) + 1;
-
-            for (int posicionVenta = 0;
-                 posicionVenta < cantidadProductosVendidos;
-                 posicionVenta++) {
+            for (int posicion = 0;
+                 posicion < randomSalesCount;
+                 posicion++) {
 
                 String idProducto =
-                        String.format(
-                                "P%03d",
-                                aleatorio.nextInt(
-                                        CANTIDAD_PRODUCTOS_DISPONIBLES
-                                ) + 1
-                        );
+                        productos.get(aleatorio.nextInt(productos.size()));
 
-                int cantidadVendida =
-                        aleatorio.nextInt(10) + 1;
+                int cantidadVendida = aleatorio.nextInt(10) + 1;
 
-                lineaVenta.append(";");
-                lineaVenta.append(idProducto);
-                lineaVenta.append(";");
-                lineaVenta.append(cantidadVendida);
+                escritor.write(idProducto + ";" + cantidadVendida);
+                escritor.newLine();
             }
+        }
+    }
 
-            escritor.write(lineaVenta.toString());
-            escritor.newLine();
+    /**
+     * Busca el tipo de documento del vendedor en Vendedores.csv.
+     */
+    private static String buscarTipoDocumento(
+            String nombre,
+            long documento
+    ) throws IOException {
+
+        File archivoVendedores =
+                new File(CARPETA_ENTRADA, "Vendedores.csv");
+
+        try (BufferedReader lector =
+                     new BufferedReader(new FileReader(archivoVendedores))) {
+
+            String linea;
+
+            while ((linea = lector.readLine()) != null) {
+
+                if (linea.isBlank()) {
+                    continue;
+                }
+
+                String[] datos = linea.split(";");
+
+                if (datos.length != 4) {
+                    throw new IOException(
+                            "Registro de vendedor inválido: " + linea
+                    );
+                }
+
+                long documentoRegistrado = Long.parseLong(datos[1]);
+                String nombreRegistrado = datos[2] + " " + datos[3];
+
+                if (documentoRegistrado == documento
+                        && nombreRegistrado.equals(nombre)) {
+
+                    return datos[0];
+                }
+            }
         }
 
-        lector.close();
-        escritor.close();
+        throw new IOException(
+                "No se encontró al vendedor: " + nombre + " (" + documento + ")."
+        );
+    }
+
+    /**
+     * Lee los identificadores de los productos disponibles.
+     */
+    private static List<String> leerProductos() throws IOException {
+
+        List<String> productos = new ArrayList<>();
+
+        File archivoProductos =
+                new File(CARPETA_ENTRADA, "productos.csv");
+
+        try (BufferedReader lector =
+                     new BufferedReader(new FileReader(archivoProductos))) {
+
+            String linea;
+
+            while ((linea = lector.readLine()) != null) {
+
+                if (linea.isBlank()) {
+                    continue;
+                }
+
+                String[] datos = linea.split(";");
+
+                if (datos.length != 3) {
+                    throw new IOException(
+                            "Registro de producto inválido: " + linea
+                    );
+                }
+
+                productos.add(datos[0]);
+            }
+        }
+
+        if (productos.isEmpty()) {
+            throw new IOException(
+                    "El archivo productos.csv no contiene productos."
+            );
+        }
+
+        return productos;
     }
 }

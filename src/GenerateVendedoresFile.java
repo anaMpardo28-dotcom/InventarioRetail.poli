@@ -47,26 +47,6 @@ public class GenerateVendedoresFile {
             "Molina"
     };
 
-    /**
-     * Iniciar la ejecución del programa.
-     *
-     * @param args argumentos no utilizados
-     */
-    public static void main(String[] args) {
-        try {
-            createSalesManInfoFile(5);
-
-            System.out.println(
-                    "El archivo de vendedores se genero correctamente."
-            );
-
-        } catch (IOException excepcion) {
-            System.err.println(
-                    "Ocurrio un error: "
-                            + excepcion.getMessage()
-            );
-        }
-    }
 
     /**
      * Debe crear el archivo Vendedores.csv con la información de los
