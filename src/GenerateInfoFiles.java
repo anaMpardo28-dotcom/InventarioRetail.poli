@@ -42,7 +42,7 @@ public class GenerateInfoFiles {
 
             GenerateVendedoresFile.createSalesManInfoFile(5);
 
-            GenerateVentasFile.generarVentasDeTodos(4);
+            GenerateVentasFile.createSalesMenFile(4);
 
             System.out.println(
                     "Todos los archivos fueron generados correctamente."
