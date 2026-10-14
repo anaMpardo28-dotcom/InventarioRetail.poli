@@ -25,9 +25,8 @@ public class GenerateReportes {
     /**
      * Inicia la generación de los reportes.
      *
-     * @param args argumentos no utilizados
      */
-    public static void main(String[] args) {
+    public static void generarReportes() {
         try {
             Map<String, String> nombresProductos = new LinkedHashMap<>();
             Map<String, Long> preciosProductos = new LinkedHashMap<>();
@@ -131,72 +130,105 @@ public class GenerateReportes {
             }
         }
     }
-
     /**
-     * Lee las ventas de un vendedor, valida cada línea, acumula las
-     * cantidades por producto y devuelve el dinero total recaudado.
+     * Lee la identificación del vendedor y sus ventas.
+     * Acumula las unidades por producto y calcula el recaudo.
      *
      * @param documento documento del vendedor
-     * @param precios precios por id de producto
-     * @param cantidades cantidades acumuladas por producto
+     * @param precios precios por producto
+     * @param cantidades unidades acumuladas por producto
      * @return dinero recaudado por el vendedor
-     * @throws IOException si ocurre un error al leer el archivo
+     * @throws IOException si el archivo falta o contiene datos inválidos
      */
-    private static long procesarVentas(String documento,
-                                       Map<String, Long> precios,
-                                       Map<String, Long> cantidades) throws IOException {
-        String nombreArchivo = "Ventas_" + documento + ".csv";
-        File archivo = new File(CARPETA_ENTRADA + "/" + nombreArchivo);
+    private static long procesarVentas(
+            String documento,
+            Map<String, Long> precios,
+            Map<String, Long> cantidades
+    ) throws IOException {
+
+        String nombreArchivo = "ventas_" + documento + ".csv";
+        File archivo = new File(CARPETA_ENTRADA, nombreArchivo);
         long total = 0;
 
-        if (!archivo.exists()) {
-            System.out.println("Advertencia: no existe " + nombreArchivo);
-            return total;
-        }
+        try (BufferedReader lector =
+                     new BufferedReader(new FileReader(archivo))) {
 
-        try (BufferedReader lector = new BufferedReader(new FileReader(archivo))) {
+            String encabezado = lector.readLine();
+
+            if (encabezado == null) {
+                throw new IOException("Archivo vacío: " + nombreArchivo);
+            }
+
+            String[] identificacion = encabezado.split(";", -1);
+
+            if (identificacion.length != 2
+                    || identificacion[0].trim().isEmpty()
+                    || !identificacion[1].trim().equals(documento)) {
+
+                throw new IOException(
+                        "Identificación del vendedor incorrecta en "
+                                + nombreArchivo
+                );
+            }
+
             String linea;
-            int numeroLinea = 0;
+            int numeroLinea = 1;
+
             while ((linea = lector.readLine()) != null) {
                 numeroLinea++;
+
                 if (linea.isBlank()) {
                     continue;
                 }
-                String[] datos = linea.split(";");
+
+                String[] datos = linea.split(";", -1);
+
                 if (datos.length != 2) {
-                    System.out.println("Formato incorrecto en " + nombreArchivo
-                            + ", linea " + numeroLinea);
-                    continue;
+                    throw new IOException(
+                            "Formato incorrecto en " + nombreArchivo
+                                    + ", línea " + numeroLinea
+                    );
                 }
 
                 String idProducto = datos[0].trim();
                 long cantidad;
+
                 try {
                     cantidad = Long.parseLong(datos[1].trim());
-                } catch (NumberFormatException e) {
-                    System.out.println("Cantidad invalida en " + nombreArchivo
-                            + ", linea " + numeroLinea);
-                    continue;
+                } catch (NumberFormatException excepcion) {
+                    throw new IOException(
+                            "Cantidad inválida en " + nombreArchivo
+                                    + ", línea " + numeroLinea
+                    );
                 }
 
                 if (!precios.containsKey(idProducto)) {
-                    System.out.println("Producto inexistente (" + idProducto + ") en "
-                            + nombreArchivo + ", linea " + numeroLinea);
-                    continue;
+                    throw new IOException(
+                            "Producto inexistente: " + idProducto
+                                    + " en " + nombreArchivo
+                                    + ", línea " + numeroLinea
+                    );
                 }
-                if (cantidad < 0) {
-                    System.out.println("Cantidad negativa en " + nombreArchivo
-                            + ", linea " + numeroLinea);
-                    continue;
+
+                if (cantidad <= 0) {
+                    throw new IOException(
+                            "La cantidad debe ser positiva en "
+                                    + nombreArchivo
+                                    + ", línea " + numeroLinea
+                    );
                 }
 
                 total += precios.get(idProducto) * cantidad;
-                cantidades.put(idProducto, cantidades.get(idProducto) + cantidad);
+
+                cantidades.put(
+                        idProducto,
+                        cantidades.get(idProducto) + cantidad
+                );
             }
         }
+
         return total;
     }
-
     /**
      * Crea ReporteVendedores.csv ordenado de mayor a menor dinero recaudado.
      *
